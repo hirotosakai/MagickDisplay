@@ -28,7 +28,7 @@ Most of the source code was created using generative AI.
 
 ## Quick Look Extension
 
-- It is configured not to trigger for file formats that can be natively previewed by macOS's standard Quick Look. (Refer to `Documents/uti.md` for the list of formats that do trigger it.)
+- It is configured not to trigger for file formats that can be natively previewed by macOS's standard Quick Look. (Refer to `doc/uti.md` for the list of formats that do trigger it.)
 - Images are resized and displayed so that neither their width nor height exceeds 800px.
 
 ## Build

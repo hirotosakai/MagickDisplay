@@ -1,0 +1,42 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Failed to create NSImage from RGBA pixels." : {
+      "comment" : "Document.m",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Failed to create NSImage from RGBA pixels."
+          }
+        }
+      }
+    },
+    "ImageMagick could not extract RGBA pixels from the image." : {
+      "comment" : "Document.m",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ImageMagick could not extract RGBA pixels from the image."
+          }
+        }
+      }
+    },
+    "No image to print." : {
+      "comment" : "Document.m",
+      "extractionState" : "manual",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No image to print."
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.2"
+}

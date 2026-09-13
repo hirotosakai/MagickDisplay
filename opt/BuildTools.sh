@@ -30,7 +30,7 @@ if [ $BUILD_LIBTOOL -eq 1 ] ; then
 echo "## Building libtool ##"
 
 if [ ! -e libtool-${VER_LIBTOOL}.tar.xz ]; then
-  curl -L -O https://ftpmirror.gnu.org/gnu/libtool/libtool-${VER_LIBTOOL}.tar.xz
+  curl -L -O https://ftp.gnu.org/gnu/libtool/libtool-${VER_LIBTOOL}.tar.xz
 fi
 tar xfz libtool-${VER_LIBTOOL}.tar.xz
 cd libtool-${VER_LIBTOOL}

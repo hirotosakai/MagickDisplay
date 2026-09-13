@@ -9,10 +9,31 @@
 
 void magick_init(void) {
     MagickWandGenesis();
+#ifdef DEBUG
+    fprintf(stderr, "Version: %s\n", MagickGetVersion(NULL));
+    fprintf(stderr, "Features: %s\n", GetMagickFeatures());
+    fprintf(stderr, "Delegates: %s\n", GetMagickDelegates());
+#endif
 }
 
 void magick_terminate(void) {
     MagickWandTerminus();
+}
+
+const char* magick_get_version(void) {
+    return MagickGetVersion(NULL);
+}
+
+const char* magick_get_features(void) {
+    return GetMagickFeatures();
+}
+
+const char* magick_get_delegates(void) {
+    return GetMagickDelegates();
+}
+
+const char* magick_get_url(void) {
+    return MagickAuthoritativeURL; // MagickCore/version.h
 }
 
 unsigned char* magick_read_image_rgba(const char* filename, const unsigned char* data, size_t length, size_t max_dimension, size_t* out_width, size_t* out_height) {

@@ -3,5 +3,6 @@
 @interface AppDelegate : NSObject <NSApplicationDelegate>
 
 - (IBAction)showMyHelp:(id)sender;
+- (IBAction)orderFrontMyAboutPanel:(id)sender;
 
 @end

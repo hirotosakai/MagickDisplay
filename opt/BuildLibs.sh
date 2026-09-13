@@ -94,7 +94,7 @@ cd libjpeg-turbo-${VER_LIBJPEG}
 unset CFLAGS CXXFLAGS
 for a in x86_64 arm64; do
   rm -rf build-${a}
-  cmake -S . -B build-${a} -DCMAKE_OSX_ARCHITECTURES:STRING="${a}" -DWITH_SIMD="${a}" -DCMAKE_PREFIX_PATH="${workDir}" -DCMAKE_INSTALL_PREFIX="${workDir}" -DBUILD_SHARED_LIBS=OFF -DENABLE_SHARED=OFF -DWITH_TOOLS=ON -DWITH_TESTS=OFF -DWITH_JPEG7=ON -DWITH_JPEG8=ON
+  cmake -S . -B build-${a} -DCMAKE_OSX_ARCHITECTURES:STRING="${a}" -DWITH_SIMD="${a}" -DCMAKE_PREFIX_PATH="${workDir}" -DCMAKE_INSTALL_PREFIX="${workDir}" -DBUILD_SHARED_LIBS=OFF -DENABLE_SHARED=OFF -DWITH_TOOLS=OFF -DWITH_TESTS=OFF -DWITH_JPEG7=ON -DWITH_JPEG8=ON
   cmake --build build-${a} -v && cmake --install build-${a} || exit 1
 done
 for f in libjpeg.a libturbojpeg.a; do
@@ -155,6 +155,7 @@ cd libwebp-${VER_LIBWEBP}
 make clean && make && make install || exit 1
 cp README.md ../doc/libwebp-README.md
 cp COPYING ../doc/libwebp-COPYING
+rm -f ../bin/*webp*
 cd ..
 
 fi

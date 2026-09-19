@@ -25,6 +25,7 @@ Most of the source code was created using generative AI.
 - Selecting [View > Actual Size] resizes the window to match the image's original dimensions. (Adjusted to ensure it does not exceed the desktop screen.)
 - Selecting [Print...] prints the currently displayed image.
   Selecting [Page Setup...] allows you to configure paper size and other print settings.
+- After selecting [Select All] or dragging the mouse to select a range of images, select [Copy] to copy them to the clipboard.
 
 ## Quick Look Extension
 

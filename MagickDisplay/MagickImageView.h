@@ -2,6 +2,7 @@
 
 @interface MagickImageView : NSImageView
 
-- (void)updateImageScaling;
+@property (assign) NSRect selectionRect;
+@property (assign) NSSize originalImageSize;
 
 @end

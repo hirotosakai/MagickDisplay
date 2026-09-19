@@ -12,5 +12,7 @@
 - (IBAction)rotateLeft:(id)sender;
 - (IBAction)rotateRight:(id)sender;
 - (IBAction)showActualSize:(id)sender;
+- (IBAction)selectAll:(id)sender;
+- (IBAction)copy:(id)sender;
 
 @end

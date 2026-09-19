@@ -110,6 +110,7 @@
         self.imageView.imageScaling = NSImageScaleProportionallyUpOrDown;
         self.imageView.frame = contentView.bounds;
         self.imageView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
+        self.imageView.originalImageSize = self.image.size;
     }
     
     if (self.image) {
@@ -131,7 +132,7 @@
     NSSize size = image.size;
     CGFloat absDegrees = fabs(degrees);
     BOOL is90or270 = (fabs(fmod(absDegrees, 180.0) - 90.0) < 0.001);
-    NSSize newSize = is90or270 ? NSMakeSize(size.height, size.width) : size;
+    NSSize newSize = is90or270 ? NSMakeSize(size.height, size.width) : NSMakeSize(size.width, size.height);
     
     NSImage *rotatedImage = [NSImage imageWithSize:newSize flipped:NO drawingHandler:^BOOL(NSRect dstRect) {
         NSGraphicsContext *context = [NSGraphicsContext currentContext];
@@ -270,8 +271,7 @@
     [printInfo setHorizontalPagination:NSPrintingPaginationModeFit];
     [printInfo setVerticalPagination:NSPrintingPaginationModeFit];
     
-    // Use the paper's imageable bounds (printable area) to size the temporary image view.
-    // This allows the image view's proportional scaling logic to lay out the image inside the printable area.
+    // Use the imageable bounds (printable area) to size the temporary image view.
     NSRect pageBounds = [printInfo imageablePageBounds];
     NSImageView *printImageView = [[NSImageView alloc] initWithFrame:NSMakeRect(0, 0, pageBounds.size.width, pageBounds.size.height)];
     printImageView.image = self.image;
@@ -281,6 +281,73 @@
     [printOp setShowsPrintPanel:YES];
 
     return printOp;
+}
+
+- (IBAction)selectAll:(id)sender {
+    if (!self.imageView || !self.image) return;
+
+    // synchronize size of ImageView and redrawed image
+    self.imageView.originalImageSize = self.image.size;
+
+    NSSize imageSize = self.image.size;
+    NSSize viewSize = self.imageView.bounds.size;
+
+    CGFloat scale = MIN(viewSize.width / imageSize.width, viewSize.height / imageSize.height);
+
+    CGFloat drawW = imageSize.width * scale;
+    CGFloat drawH = imageSize.height * scale;
+    CGFloat offsetX = (viewSize.width - drawW) / 2.0;
+    CGFloat offsetY = (viewSize.height - drawH) / 2.0;
+
+    self.imageView.selectionRect = NSMakeRect(offsetX, offsetY, drawW, drawH);
+    [self.imageView setNeedsDisplay:YES];
+}
+
+- (BOOL)validateMenuItem:(NSMenuItem *)menuItem {
+    if ([NSStringFromSelector(menuItem.action) isEqualToString:NSStringFromSelector(@selector(copy:))]) {
+        return !NSIsEmptyRect(self.imageView.selectionRect);
+    }
+    return [super validateMenuItem:menuItem];
+}
+
+- (IBAction)copy:(id)sender {
+    if (!self.imageView || !self.image) return;
+
+    NSRect selection = self.imageView.selectionRect;
+    if (NSIsEmptyRect(selection)) return;
+
+    NSSize imageSize = self.image.size;
+    NSSize viewSize = self.imageView.bounds.size;
+    CGFloat scale = MIN(viewSize.width / imageSize.width, viewSize.height / imageSize.height);
+
+    CGFloat drawW = imageSize.width * scale;
+    CGFloat drawH = imageSize.height * scale;
+    CGFloat offsetX = (viewSize.width - drawW) / 2.0;
+    CGFloat offsetY = (viewSize.height - drawH) / 2.0;
+
+    CGFloat imageX = (selection.origin.x - offsetX) / scale;
+    CGFloat imageY = (selection.origin.y - offsetY) / scale;
+    CGFloat imageW = selection.size.width / scale;
+    CGFloat imageH = selection.size.height / scale;
+
+    imageX = MAX(0, imageX);
+    imageY = MAX(0, imageY);
+    imageW = MIN(imageW, imageSize.width - imageX);
+    imageH = MIN(imageH, imageSize.height - imageY);
+
+    if (imageW <= 0 || imageH <= 0) return;
+
+    NSImage *finalImage = [[NSImage alloc] initWithSize:NSMakeSize(imageW, imageH)];
+    [finalImage lockFocus];
+    [self.image drawAtPoint:NSMakePoint(0, 0) 
+                  fromRect:NSMakeRect(imageX, imageY, imageW, imageH) 
+                  operation:NSCompositingOperationCopy 
+                    fraction:1.0];
+    [finalImage unlockFocus];
+
+    NSPasteboard *pasteboard = [NSPasteboard generalPasteboard];
+    [pasteboard clearContents];
+    [pasteboard writeObjects:@[finalImage]];
 }
 
 @end

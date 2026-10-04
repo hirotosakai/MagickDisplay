@@ -25,6 +25,17 @@
         }
       }
     },
+    "No image to open." : {
+      "comment" : "AppDelegate.m",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "開けるファイルがありません。"
+          }
+        }
+      }
+    },
     "No image to print." : {
       "comment" : "Document.m",
       "extractionState" : "manual",
@@ -32,7 +43,18 @@
         "ja" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No image to print."
+            "value" : "プリントする画像がありません。"
+          }
+        }
+      }
+    },
+    "OK" : {
+      "comment" : "AppDelegate.m",
+      "localizations" : {
+        "ja" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
           }
         }
       }

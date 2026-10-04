@@ -26,6 +26,7 @@ Most of the source code was created using generative AI.
 - Selecting [Print...] prints the currently displayed image.
   Selecting [Page Setup...] allows you to configure paper size and other print settings.
 - After selecting [Select All] or dragging the mouse to select a range of images, select [Copy] to copy them to the clipboard.
+- If you select a folder using [Open...], you can use [Open Next (Previous)] to open the next (previous) file in that folder. (Files that cannot be opened will be skipped.)
 
 ## Quick Look Extension
 

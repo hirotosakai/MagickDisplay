@@ -1,6 +1,7 @@
 #import "Document.h"
 #import "MagickImageView.h"
 #import "MagickWrapper.h"
+#import "AppDelegate.h"
 
 @implementation Document
 
@@ -17,6 +18,14 @@
 
 - (BOOL)isDocumentEdited {
     return NO;
+}
+
+- (NSString *)displayName {
+    if (self.navigationFolderPath) {
+        NSString *folderName = [[NSURL fileURLWithPath:self.navigationFolderPath] lastPathComponent];
+        return [NSString stringWithFormat:@"%@/%@", folderName, self.fileURL.lastPathComponent];
+    }
+    return [super displayName];
 }
 
 - (NSString *)windowNibName {
@@ -93,7 +102,46 @@
         }
         return NO;
     }
-    
+
+    // cache files in the same directory
+    NSURL *directoryURL = [url URLByDeletingLastPathComponent];
+    NSError *dirError = nil;
+    NSArray<NSURL *> *files = [[NSFileManager defaultManager] contentsOfDirectoryAtURL:directoryURL
+                                                                             includingPropertiesForKeys:nil
+                                                                                              options:NSDirectoryEnumerationSkipsHiddenFiles
+                                                                                                error:&dirError];
+    if (!files) {
+        // Fallback: try to use the navigation folder URL from AppDelegate
+        AppDelegate *appDelegate = (AppDelegate *)[[NSApplication sharedApplication] delegate];
+        NSURL *navFolderURL = appDelegate.navigationFolderURL;
+
+        if (navFolderURL && [directoryURL.standardizedURL isEqual:navFolderURL.standardizedURL]) {
+            files = [[NSFileManager defaultManager] contentsOfDirectoryAtURL:navFolderURL
+                                                                             includingPropertiesForKeys:nil
+                                                                                              options:NSDirectoryEnumerationSkipsHiddenFiles
+                                                                                                error:&dirError];
+        }
+    }
+
+    if (files) {
+        NSArray *sortedFiles = [files sortedArrayUsingComparator:^NSComparisonResult(NSURL *url1, NSURL *url2) {
+            return [url1.lastPathComponent compare:url2.lastPathComponent];
+        }];
+        self.cachedFiles = sortedFiles;
+        NSUInteger index = [sortedFiles indexOfObject:url];
+        if (index != NSNotFound) {
+            self.currentFileIndex = index;
+        }
+    } else {
+        NSLog(@"%ld %@", dirError.code, dirError.localizedFailureReason);
+    }
+
+    // Set navigation folder name if the file belongs to the selected navigation folder
+    AppDelegate *appDelegate = (AppDelegate *)[[NSApplication sharedApplication] delegate];
+    if (appDelegate.navigationFolderURL && [directoryURL.standardizedURL isEqual:appDelegate.navigationFolderURL.standardizedURL]) {
+        self.navigationFolderPath = [directoryURL standardizedURL].path;
+    }
+
     return YES;
 }
 
@@ -304,9 +352,22 @@
 }
 
 - (BOOL)validateMenuItem:(NSMenuItem *)menuItem {
-    if ([NSStringFromSelector(menuItem.action) isEqualToString:NSStringFromSelector(@selector(copy:))]) {
+    NSString *action = NSStringFromSelector(menuItem.action);
+
+    if ([action isEqualToString:NSStringFromSelector(@selector(copy:))]) {
         return !NSIsEmptyRect(self.imageView.selectionRect);
     }
+
+    if ([action isEqualToString:NSStringFromSelector(@selector(openPrevFile:))] ||
+        [action isEqualToString:NSStringFromSelector(@selector(openPrevFileInWindow:))]) {
+        return (self.cachedFiles.count > 0 && self.currentFileIndex > 0);
+    }
+
+    if ([action isEqualToString:NSStringFromSelector(@selector(openNextFile:))] ||
+        [action isEqualToString:NSStringFromSelector(@selector(openNextFileInWindow:))]) {
+        return (self.cachedFiles.count > 0 && self.currentFileIndex < self.cachedFiles.count - 1);
+    }
+
     return [super validateMenuItem:menuItem];
 }
 
@@ -348,6 +409,66 @@
     NSPasteboard *pasteboard = [NSPasteboard generalPasteboard];
     [pasteboard clearContents];
     [pasteboard writeObjects:@[finalImage]];
+}
+
+- (void)attemptToOpenFileAtIndex:(NSInteger)index direction:(NSInteger)direction withWindow:(BOOL)withWindow currentWindow:(NSWindow *)currentWindow currentFrame:(NSRect)currentFrame {
+    if (index < 0 || index >= self.cachedFiles.count) {
+        return;
+    }
+
+    NSURL *url = self.cachedFiles[index];
+    [[NSDocumentController sharedDocumentController] openDocumentWithContentsOfURL:url
+                                                                         display:YES
+                                                              completionHandler:^(NSDocument *doc, BOOL wasAlreadyOpen, NSError *error) {
+        if (doc) {
+            NSWindow *newWindow = doc.windowControllers.firstObject.window;
+            if (newWindow && currentWindow) {
+                NSRect newFrame = newWindow.frame;
+                if (!withWindow) {
+                    newFrame.origin.x = currentFrame.origin.x;
+                    newFrame.origin.y = currentFrame.origin.y + (currentFrame.size.height - newFrame.size.height);
+                }
+                [newWindow setFrame:newFrame display:YES animate:NO];
+            }
+            if (!withWindow) [self close];
+        } else {
+            [self attemptToOpenFileAtIndex:index + direction direction:direction withWindow:withWindow currentWindow:currentWindow currentFrame:currentFrame];
+        }
+    }];
+}
+
+- (void)openPrev:(BOOL)withWindow {
+    if (self.cachedFiles.count == 0) return;
+
+    NSWindow *currentWindow = self.windowControllers.firstObject.window;
+    NSRect currentFrame = currentWindow ? currentWindow.frame : NSZeroRect;
+
+    [self attemptToOpenFileAtIndex:self.currentFileIndex - 1 direction:-1 withWindow:withWindow currentWindow:currentWindow currentFrame:currentFrame];
+}
+
+- (void)openNext:(BOOL)withWindow {
+    if (self.cachedFiles.count == 0) return;
+
+    NSWindow *currentWindow = self.windowControllers.firstObject.window;
+    NSRect currentFrame = currentWindow ? currentWindow.frame : NSZeroRect;
+
+    [self attemptToOpenFileAtIndex:self.currentFileIndex + 1 direction:1 withWindow:withWindow currentWindow:currentWindow currentFrame:currentFrame];
+}
+
+- (IBAction)openPrevFile:(id)sender {
+    [self openPrev:NO];
+}
+
+- (IBAction)openPrevFileInWindow:(id)sender {
+    [self openPrev:YES];
+}
+
+- (IBAction)openNextFile:(id)sender {
+    [self openNext:NO];
+}
+
+- (IBAction)openNextFileInWindow:(id)sender {
+    [self openNext:YES];
 }
 
 @end

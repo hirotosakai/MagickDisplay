@@ -112,3 +112,15 @@
 
 /* Class = "NSMenuItem"; title = "Copy"; ObjectID = "x3v-GG-iWU"; */
 "x3v-GG-iWU.title" = "コピー";
+
+/* Class = "NSMenuItem"; title = "Open Previous"; ObjectID = "zlD-pH-eVj"; */
+"zlD-pH-eVj.title" = "前を開く";
+
+/* Class = "NSMenuItem"; title = "Open Next"; ObjectID = "BYG-t2-sev"; */
+"BYG-t2-sev.title" = "次を開く";
+
+/* Class = "NSMenuItem"; title = "Open Previous in New Window"; ObjectID = "aKp-gm-PD8"; */
+"aKp-gm-PD8.title" = "別のウインドウで前を開く";
+
+/* Class = "NSMenuItem"; title = "Open Next in New Window"; ObjectID = "cTa-RO-Vpo"; */
+"cTa-RO-Vpo.title" = "別のウインドウで次を開く";

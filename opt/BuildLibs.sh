@@ -1,11 +1,13 @@
 #!/bin/sh
 # BuildLibs.sh - build libraries for ImageMagick
 
+BUILD_ZSTD=1
+BUILD_LCMS2=1
+
 BUILD_LIBJPEG=1
 BUILD_LIBPNG=1
 BUILD_LIBTIFF=1
 BUILD_LIBWEBP=1
-BUILD_LCMS2=1
 
 BUILD_LIBJBIG=0  # GPL-2.0
 BUILD_DJVULIB=0  # GPL-2.0
@@ -31,24 +33,26 @@ BUILD_FLIF=1
 BUILD_FREETYPE=0
 BUILD_LIBWMF=0
 
+VER_ZSTD=1.5.7
+VER_LCMS2=2.19.1
+
 VER_LIBJPEG=3.2.0
-VER_LIBPNG=1.6.58
+VER_LIBPNG=1.6.59
 VER_LIBTIFF=4.7.2
 VER_LIBWEBP=1.6.0
-VER_LCMS2=2.19.1
 
 VER_JBIGKIT=2.1
 VER_DJVULIB=3.5.30
 VER_LIBRAW=0.22.2
 VER_OPENJP2=2.5.4
 
-VER_IMATH=3.2.2
-VER_OPENJPH=0.31.0
-VER_OPENEXR=3.4.14
+VER_IMATH=3.2.3
+VER_OPENJPH=0.32.0
+VER_OPENEXR=3.5.1
 
 VER_LIBDE265=1.1.3
-VER_AOM=3.15.0
-VER_LIBHEIF=1.23.4
+VER_AOM=3.15.1
+VER_LIBHEIF=1.23.5
 
 VER_BROTLI=1.2.0
 VER_HIGHWAY=1.4.0
@@ -81,6 +85,42 @@ export PKG_CONFIG_PATH=${workDir}/lib/pkgconfig
 ################################################################################
 
 #### Step 1
+
+## zstd
+if [ $BUILD_ZSTD -eq 1 ] ; then
+echo "## Building zstd ##"
+
+if [ ! -e zstd-${VER_ZSTD}.tar.gz ]; then
+  curl -L -O https://github.com/facebook/zstd/releases/download/v${VER_ZSTD}/zstd-${VER_ZSTD}.tar.gz
+fi
+tar xfz zstd-${VER_ZSTD}.tar.gz
+cd zstd-${VER_ZSTD}
+rm -rf builddir
+cmake -S ./build/cmake -B builddir -DCMAKE_OSX_ARCHITECTURES:STRING="arm64;x86_64" -DCMAKE_PREFIX_PATH="${workDir}" -DCMAKE_INSTALL_PREFIX="${workDir}" -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=OFF -DZSTD_BUILD_SHARED=OFF -DZSTD_BUILD_PROGRAMS=OFF 
+cmake --build builddir -v && cmake --install builddir || exit 1
+cp README.md ../doc/zstd-README.md
+cp LICENSE ../doc/zstd-LICENSE
+cp COPYING ../doc/zstd-COPYING
+cd ..
+
+fi
+
+## lcms2
+if [ $BUILD_LCMS2 -eq 1 ] ; then
+echo "## Building lcms2 ##"
+
+if [ ! -e lcms2-${VER_LCMS2}.tar.gz ]; then
+  curl -L -O https://downloads.sourceforge.net/project/lcms/lcms/${VER_LCMS2}/lcms2-${VER_LCMS2}.tar.gz
+fi
+tar xfz lcms2-${VER_LCMS2}.tar.gz
+cd lcms2-${VER_LCMS2}
+./configure --prefix="${workDir}" --disable-dependency-tracking --enable-shared=no
+make clean && make && make install || exit 1
+cp README.md ../doc/lcms2-README.md
+cp LICENSE ../doc/lcms2-LICENSE
+cd ..
+
+fi
 
 ## libjpeg
 if [ $BUILD_LIBJPEG -eq 1 ] ; then
@@ -156,23 +196,6 @@ make clean && make && make install || exit 1
 cp README.md ../doc/libwebp-README.md
 cp COPYING ../doc/libwebp-COPYING
 rm -f ../bin/*webp*
-cd ..
-
-fi
-
-## lcms2
-if [ $BUILD_LCMS2 -eq 1 ] ; then
-echo "## Building lcms2 ##"
-
-if [ ! -e lcms2-${VER_LCMS2}.tar.gz ]; then
-  curl -L -O https://downloads.sourceforge.net/project/lcms/lcms/${VER_LCMS2}/lcms2-${VER_LCMS2}.tar.gz
-fi
-tar xfz lcms2-${VER_LCMS2}.tar.gz
-cd lcms2-${VER_LCMS2}
-./configure --prefix="${workDir}" --disable-dependency-tracking --enable-shared=no
-make clean && make && make install || exit 1
-cp README.md ../doc/lcms2-README.md
-cp LICENSE ../doc/lcms2-LICENSE
 cd ..
 
 fi

@@ -2,7 +2,7 @@
 # BuildMagick.sh - build ImageMagick
 
 BUILD_MAGICK=1
-VER_MAGICK=7.1.2-31
+VER_MAGICK=7.1.2-32
 
 ################################################################################
 PATH=/usr/bin:/bin
@@ -30,10 +30,10 @@ fi
 tar xfz ImageMagick-${VER_MAGICK}.tar.xz
 cd ImageMagick-${VER_MAGICK}
 
-./configure --prefix="${workDir}" --disable-dependency-tracking --disable-static --disable-silent-rules --disable-delegate-build --disable-docs --without-magick-plus-plus --without-perl --without-x --with-quantum-depth=8 --disable-hdri \
---with-jpeg --with-png --with-tiff --with-webp --with-raw --with-openjp2 --with-openexr --with-heic --with-jxl --with-fpx --with-uhdr --with-flif \
+./configure --host="`uname -m`-darwin" --prefix="${workDir}" --disable-dependency-tracking --disable-static --disable-silent-rules --disable-delegate-build --disable-docs --without-magick-plus-plus --without-perl --without-x --with-quantum-depth=8 --disable-hdri \
+--with-jpeg --with-png --with-tiff --with-webp --with-raw --with-openjp2 --with-zstd --with-openexr --with-heic --with-jxl --with-fpx --with-uhdr --with-flif \
 --without-djvu --without-jbig --without-wmf --without-freetype --without-rsvg \
---without-fontconfig --without-lcms --without-pango --without-bzlib --without-zlib --without-zip --without-zstd --without-lzma --without-xml
+--without-fontconfig --without-lcms --without-pango --without-bzlib --without-zlib --without-zip --without-lzma --without-xml
 
 if [ $BUILD_MAGICK -eq 0 ]; then
   exit 0

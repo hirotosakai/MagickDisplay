@@ -8,9 +8,9 @@ BUILD_CMAKE=1
 BUILD_YASM=1
 
 VER_LIBTOOL=2.6.2
-VER_PKGCONF=3.0.6
+VER_PKGCONF=3.0.7
 VER_PKGCONFIG=0.29.2
-VER_CMAKE=4.4.2
+VER_CMAKE=4.4.3
 VER_YASM=1.3.0
 
 ################################################################################

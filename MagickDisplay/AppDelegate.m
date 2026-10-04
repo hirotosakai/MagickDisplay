@@ -5,6 +5,7 @@
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {
     magick_init();
+    self.folderContextMap = [NSMutableDictionary dictionary];
 }
 
 - (void)applicationWillTerminate:(NSNotification *)aNotification {
@@ -86,21 +87,25 @@
     }
 
     if (isDirectory) {
-        // save folder URL for navigation permission
-        self.navigationFolderURL = url;
-
         // find the first non-hidden file in the directory
         NSArray<NSURL *> *files = [[NSFileManager defaultManager] contentsOfDirectoryAtURL:url
                                                                 includingPropertiesForKeys:nil
                                                                                    options:NSDirectoryEnumerationSkipsHiddenFiles
                                                                                      error:&error];
-        NSArray *sortedFiles = nil;
         if (files) {
-            sortedFiles = [files sortedArrayUsingComparator:^NSComparisonResult(NSURL *url1, NSURL *url2) {
+            @synchronized(self.folderContextMap) {
+                for (NSURL *fileURL in files) {
+                    self.folderContextMap[fileURL] = url;
+                }
+            }
+
+            NSArray *sortedFiles = [files sortedArrayUsingComparator:^NSComparisonResult(NSURL *url1, NSURL *url2) {
                 return [url1.lastPathComponent compare:url2.lastPathComponent];
             }];
+            [self attemptToOpenFirstAvailableFileFromList:sortedFiles ?: @[] atIndex:0];
+        } else {
+            [self attemptToOpenFirstAvailableFileFromList:@[] atIndex:0];
         }
-        [self attemptToOpenFirstAvailableFileFromList:sortedFiles ?: @[] atIndex:0];
     } else {
         // Regular file selection
         [[NSDocumentController sharedDocumentController] openDocumentWithContentsOfURL:url 
@@ -120,10 +125,12 @@
     NSOpenPanel *panel = [NSOpenPanel openPanel];
     panel.canChooseDirectories = YES;
     panel.canChooseFiles = YES;
-    panel.allowsMultipleSelection = NO;
+    panel.allowsMultipleSelection = YES;
 
     if ([panel runModal] == NSModalResponseOK) {
-        [self handleOpenURL:panel.URL];
+        for (NSURL *url in panel.URLs) {
+            [self handleOpenURL:url];
+        }
     }
 }
 

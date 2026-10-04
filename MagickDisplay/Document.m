@@ -21,15 +21,61 @@
 }
 
 - (NSString *)displayName {
-    if (self.navigationFolderPath) {
-        NSString *folderName = [[NSURL fileURLWithPath:self.navigationFolderPath] lastPathComponent];
-        return [NSString stringWithFormat:@"%@/%@", folderName, self.fileURL.lastPathComponent];
+    if (self.navigationFolderURL) {
+        return [NSString stringWithFormat:@"%@ | %@",
+                self.fileURL.lastPathComponent,
+                self.navigationFolderURL.lastPathComponent];
     }
     return [super displayName];
 }
 
 - (NSString *)windowNibName {
     return @"Document";
+}
+
+- (void)setNavigationFolderURLAndCacheFiles:(NSURL *)url {
+    // get navigation folder URL from AppDelegate context map
+    AppDelegate *appDelegate = [[NSApplication sharedApplication] delegate];
+    NSURL *contextFolderURL = nil;
+    @synchronized(appDelegate.folderContextMap) {
+        contextFolderURL = appDelegate.folderContextMap[url];
+    }
+    self.navigationFolderURL = contextFolderURL;
+
+    // cache files in the same directory
+    NSFileManager *manager = [NSFileManager defaultManager];
+    NSURL *navFolderURL = self.navigationFolderURL;
+    NSURL *navFolderStdURL = navFolderURL.standardizedURL;
+    NSURL *directoryURL = url.URLByDeletingLastPathComponent;
+    NSURL *directoryStdURL = directoryURL.standardizedURL;
+    NSError *dirError = nil;
+
+    NSArray<NSURL *> *files = [manager contentsOfDirectoryAtURL:directoryURL
+                                     includingPropertiesForKeys:nil
+                                                        options:NSDirectoryEnumerationSkipsHiddenFiles
+                                                          error:&dirError];
+    // Fallback: try to use the navigation folder URL from AppDelegate
+    if (!files) {
+        if (navFolderURL && [directoryStdURL isEqual:navFolderStdURL]) {
+            files = [manager contentsOfDirectoryAtURL:navFolderURL
+                           includingPropertiesForKeys:nil
+                                              options:NSDirectoryEnumerationSkipsHiddenFiles
+                                                error:&dirError];
+        }
+    }
+
+    if (files) {
+        NSArray *sortedFiles = [files sortedArrayUsingComparator:^NSComparisonResult(NSURL *url1, NSURL *url2) {
+            return [url1.lastPathComponent compare:url2.lastPathComponent];
+        }];
+        self.cachedFiles = sortedFiles;
+        NSUInteger index = [sortedFiles indexOfObject:url];
+        if (index != NSNotFound) {
+            self.currentFileIndex = index;
+        }
+    } else {
+        NSLog(@"%ld %@ %@", dirError.code, dirError.localizedFailureReason, directoryStdURL.path);
+    }
 }
 
 - (BOOL)readFromURL:(NSURL *)url ofType:(NSString *)typeName error:(NSError **)outError {
@@ -103,44 +149,7 @@
         return NO;
     }
 
-    // cache files in the same directory
-    NSURL *directoryURL = [url URLByDeletingLastPathComponent];
-    NSError *dirError = nil;
-    NSArray<NSURL *> *files = [[NSFileManager defaultManager] contentsOfDirectoryAtURL:directoryURL
-                                                                             includingPropertiesForKeys:nil
-                                                                                              options:NSDirectoryEnumerationSkipsHiddenFiles
-                                                                                                error:&dirError];
-    if (!files) {
-        // Fallback: try to use the navigation folder URL from AppDelegate
-        AppDelegate *appDelegate = (AppDelegate *)[[NSApplication sharedApplication] delegate];
-        NSURL *navFolderURL = appDelegate.navigationFolderURL;
-
-        if (navFolderURL && [directoryURL.standardizedURL isEqual:navFolderURL.standardizedURL]) {
-            files = [[NSFileManager defaultManager] contentsOfDirectoryAtURL:navFolderURL
-                                                                             includingPropertiesForKeys:nil
-                                                                                              options:NSDirectoryEnumerationSkipsHiddenFiles
-                                                                                                error:&dirError];
-        }
-    }
-
-    if (files) {
-        NSArray *sortedFiles = [files sortedArrayUsingComparator:^NSComparisonResult(NSURL *url1, NSURL *url2) {
-            return [url1.lastPathComponent compare:url2.lastPathComponent];
-        }];
-        self.cachedFiles = sortedFiles;
-        NSUInteger index = [sortedFiles indexOfObject:url];
-        if (index != NSNotFound) {
-            self.currentFileIndex = index;
-        }
-    } else {
-        NSLog(@"%ld %@", dirError.code, dirError.localizedFailureReason);
-    }
-
-    // Set navigation folder name if the file belongs to the selected navigation folder
-    AppDelegate *appDelegate = (AppDelegate *)[[NSApplication sharedApplication] delegate];
-    if (appDelegate.navigationFolderURL && [directoryURL.standardizedURL isEqual:appDelegate.navigationFolderURL.standardizedURL]) {
-        self.navigationFolderPath = [directoryURL standardizedURL].path;
-    }
+    [self setNavigationFolderURLAndCacheFiles:url];
 
     return YES;
 }

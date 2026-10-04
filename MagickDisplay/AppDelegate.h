@@ -2,7 +2,7 @@
 
 @interface AppDelegate : NSObject <NSApplicationDelegate>
 
-@property (strong) NSURL *navigationFolderURL;
+@property (strong) NSMutableDictionary<NSURL *, NSURL *> *folderContextMap;
 
 - (IBAction)showMyHelp:(id)sender;
 - (IBAction)orderFrontMyAboutPanel:(id)sender;

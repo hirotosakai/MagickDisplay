@@ -10,7 +10,7 @@
 @property (assign) CGFloat originalHeight;
 @property (strong) NSArray<NSURL *> *cachedFiles;
 @property (assign) NSUInteger currentFileIndex;
-@property (strong) NSString *navigationFolderPath;
+@property (strong) NSURL *navigationFolderURL;
 
 - (IBAction)rotateLeft:(id)sender;
 - (IBAction)rotateRight:(id)sender;

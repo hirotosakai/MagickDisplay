@@ -4,13 +4,13 @@
 
 @interface Document : NSDocument
 
-@property (weak) IBOutlet MagickImageView *imageView;
-@property (strong) NSImage *image;
-@property (assign) CGFloat originalWidth;
-@property (assign) CGFloat originalHeight;
-@property (strong) NSArray<NSURL *> *cachedFiles;
-@property (assign) NSUInteger currentFileIndex;
-@property (strong) NSURL *navigationFolderURL;
+@property (nonatomic, weak) IBOutlet MagickImageView *imageView;
+@property (nonatomic, strong) NSImage *image;
+@property (nonatomic, assign) CGFloat originalWidth;
+@property (nonatomic, assign) CGFloat originalHeight;
+@property (nonatomic, copy) NSArray<NSURL *> *cachedFiles;
+@property (nonatomic, assign) NSUInteger currentFileIndex;
+@property (nonatomic, strong) NSURL *navigationFolderURL;
 
 - (IBAction)rotateLeft:(id)sender;
 - (IBAction)rotateRight:(id)sender;

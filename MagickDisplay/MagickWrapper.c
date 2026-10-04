@@ -41,9 +41,11 @@ unsigned char* magick_read_image_rgba(const char* filename, const unsigned char*
     if (wand == NULL) return NULL;
 
     // set filename to identify file format
-    if (MagickSetFilename(wand, filename) == MagickFalse) {
-        DestroyMagickWand(wand);
-        return NULL;
+    if (filename != NULL) {
+        if (MagickSetFilename(wand, filename) == MagickFalse) {
+            DestroyMagickWand(wand);
+            return NULL;
+        }
     }
 
     if (MagickReadImageBlob(wand, data, length) == MagickFalse) {
@@ -55,7 +57,7 @@ unsigned char* magick_read_image_rgba(const char* filename, const unsigned char*
     size_t h = MagickGetImageHeight(wand);
 
 #ifdef DEBUG
-    fprintf(stderr, "magick_read_image_rgba() will read image Filename: %s Size: %zu x %zu\n", filename, w, h);
+    fprintf(stderr, "magick_read_image_rgba() will read image Filename: %s Size: %zu x %zu\n", filename ? filename : "(null)", w, h);
 #endif
 
     // resize if the larger dimension exceeds max_dimension

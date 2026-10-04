@@ -2,8 +2,8 @@
 
 @interface MagickImageView ()
 
-@property (assign) NSPoint startPoint;
-@property (assign) BOOL isDragging;
+@property (nonatomic, assign) NSPoint startPoint;
+@property (nonatomic, assign) BOOL isDragging;
 
 @end
 
@@ -32,11 +32,13 @@
 }
 
 - (void)updateSelectionForResizeFromOldFrame:(NSRect)oldFrame {
-    if (self.originalImageSize.width <= 0) return;
+    if (self.originalImageSize.width <= 0 || self.originalImageSize.height <= 0) return;
 
     // Calculate image drawing area in the old view
     NSSize oldViewSize = oldFrame.size;
+    if (oldViewSize.width <= 0 || oldViewSize.height <= 0) return;
     CGFloat oldScale = MIN(oldViewSize.width / self.originalImageSize.width, oldViewSize.height / self.originalImageSize.height);
+    if (oldScale <= 0) return;
     CGFloat oldDrawW = self.originalImageSize.width * oldScale;
     CGFloat oldDrawH = self.originalImageSize.height * oldScale;
     CGFloat oldOffsetX = (oldViewSize.width - oldDrawW) / 2.0;
@@ -44,6 +46,7 @@
 
     // Calculate image drawing area in the new view
     NSSize newViewSize = self.bounds.size;
+    if (newViewSize.width <= 0 || newViewSize.height <= 0) return;
     CGFloat newScale = MIN(newViewSize.width / self.originalImageSize.width, newViewSize.height / self.originalImageSize.height);
     CGFloat newDrawW = self.originalImageSize.width * newScale;
     CGFloat newDrawH = self.originalImageSize.height * newScale;
@@ -65,11 +68,12 @@
 }
 
 - (void)updateSelectionForCurrentBounds {
-    if (NSIsEmptyRect(self.selectionRect) || self.originalImageSize.width <= 0) {
+    if (NSIsEmptyRect(self.selectionRect) || self.originalImageSize.width <= 0 || self.originalImageSize.height <= 0) {
         return;
     }
 
     NSSize viewSize = self.bounds.size;
+    if (viewSize.width <= 0 || viewSize.height <= 0) return;
     CGFloat scale = MIN(viewSize.width / self.originalImageSize.width, viewSize.height / self.originalImageSize.height);
 
     CGFloat drawW = self.originalImageSize.width * scale;

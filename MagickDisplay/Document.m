@@ -35,7 +35,7 @@
 
 - (void)setNavigationFolderURLAndCacheFiles:(NSURL *)url {
     // get navigation folder URL from AppDelegate context map
-    AppDelegate *appDelegate = [[NSApplication sharedApplication] delegate];
+    AppDelegate *appDelegate = (AppDelegate *)[[NSApplication sharedApplication] delegate];
     NSURL *contextFolderURL = nil;
     @synchronized(appDelegate.folderContextMap) {
         contextFolderURL = appDelegate.folderContextMap[url];
@@ -347,7 +347,9 @@
     self.imageView.originalImageSize = self.image.size;
 
     NSSize imageSize = self.image.size;
+    if (imageSize.width <= 0 || imageSize.height <= 0) return;
     NSSize viewSize = self.imageView.bounds.size;
+    if (viewSize.width <= 0 || viewSize.height <= 0) return;
 
     CGFloat scale = MIN(viewSize.width / imageSize.width, viewSize.height / imageSize.height);
 
@@ -387,8 +389,12 @@
     if (NSIsEmptyRect(selection)) return;
 
     NSSize imageSize = self.image.size;
+    if (imageSize.width <= 0 || imageSize.height <= 0) return;
     NSSize viewSize = self.imageView.bounds.size;
+    if (viewSize.width <= 0 || viewSize.height <= 0) return;
+
     CGFloat scale = MIN(viewSize.width / imageSize.width, viewSize.height / imageSize.height);
+    if (scale <= 0) return;
 
     CGFloat drawW = imageSize.width * scale;
     CGFloat drawH = imageSize.height * scale;

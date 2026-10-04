@@ -2,7 +2,7 @@
 
 @interface AppDelegate : NSObject <NSApplicationDelegate>
 
-@property (strong) NSMutableDictionary<NSURL *, NSURL *> *folderContextMap;
+@property (nonatomic, strong, readonly) NSMutableDictionary<NSURL *, NSURL *> *folderContextMap;
 
 - (IBAction)showMyHelp:(id)sender;
 - (IBAction)orderFrontMyAboutPanel:(id)sender;

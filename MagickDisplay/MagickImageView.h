@@ -2,7 +2,7 @@
 
 @interface MagickImageView : NSImageView
 
-@property (assign) NSRect selectionRect;
-@property (assign) NSSize originalImageSize;
+@property (nonatomic, assign) NSRect selectionRect;
+@property (nonatomic, assign) NSSize originalImageSize;
 
 @end

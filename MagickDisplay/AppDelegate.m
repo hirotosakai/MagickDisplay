@@ -1,6 +1,12 @@
 #import "AppDelegate.h"
 #import "MagickWrapper.h"
 
+@interface AppDelegate ()
+
+@property (nonatomic, strong, readwrite) NSMutableDictionary<NSURL *, NSURL *> *folderContextMap;
+
+@end
+
 @implementation AppDelegate
 
 - (void)applicationDidFinishLaunching:(NSNotification *)aNotification {

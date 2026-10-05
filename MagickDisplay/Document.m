@@ -126,7 +126,6 @@
         self.imageView.imageScaling = NSImageScaleProportionallyUpOrDown;
         self.imageView.frame = contentView.bounds;
         self.imageView.autoresizingMask = NSViewWidthSizable | NSViewHeightSizable;
-        self.imageView.originalImageSize = self.image.size;
     }
     
     if (self.image) {
@@ -301,31 +300,14 @@
 
 - (IBAction)selectAll:(id)sender {
     if (!self.imageView || !self.image) return;
-
-    // synchronize size of ImageView and redrawed image
-    self.imageView.originalImageSize = self.image.size;
-
-    NSSize imageSize = self.image.size;
-    if (imageSize.width <= 0 || imageSize.height <= 0) return;
-    NSSize viewSize = self.imageView.bounds.size;
-    if (viewSize.width <= 0 || viewSize.height <= 0) return;
-
-    CGFloat scale = MIN(viewSize.width / imageSize.width, viewSize.height / imageSize.height);
-
-    CGFloat drawW = imageSize.width * scale;
-    CGFloat drawH = imageSize.height * scale;
-    CGFloat offsetX = (viewSize.width - drawW) / 2.0;
-    CGFloat offsetY = (viewSize.height - drawH) / 2.0;
-
-    self.imageView.selectionRect = NSMakeRect(offsetX, offsetY, drawW, drawH);
-    [self.imageView setNeedsDisplay:YES];
+    [self.imageView selectAll:sender];
 }
 
 - (BOOL)validateMenuItem:(NSMenuItem *)menuItem {
     NSString *action = NSStringFromSelector(menuItem.action);
 
     if ([action isEqualToString:NSStringFromSelector(@selector(copy:))]) {
-        return !NSIsEmptyRect(self.imageView.selectionRect);
+        return self.imageView.hasSelection;
     }
 
     if ([action isEqualToString:NSStringFromSelector(@selector(openPrevFile:))] ||
@@ -344,39 +326,14 @@
 - (IBAction)copy:(id)sender {
     if (!self.imageView || !self.image) return;
 
-    NSRect selection = self.imageView.selectionRect;
-    if (NSIsEmptyRect(selection)) return;
+    NSRect imageRect = [self.imageView selectedImageRect];
+    if (NSIsEmptyRect(imageRect)) return;
 
-    NSSize imageSize = self.image.size;
-    if (imageSize.width <= 0 || imageSize.height <= 0) return;
-    NSSize viewSize = self.imageView.bounds.size;
-    if (viewSize.width <= 0 || viewSize.height <= 0) return;
-
-    CGFloat scale = MIN(viewSize.width / imageSize.width, viewSize.height / imageSize.height);
-    if (scale <= 0) return;
-
-    CGFloat drawW = imageSize.width * scale;
-    CGFloat drawH = imageSize.height * scale;
-    CGFloat offsetX = (viewSize.width - drawW) / 2.0;
-    CGFloat offsetY = (viewSize.height - drawH) / 2.0;
-
-    CGFloat imageX = (selection.origin.x - offsetX) / scale;
-    CGFloat imageY = (selection.origin.y - offsetY) / scale;
-    CGFloat imageW = selection.size.width / scale;
-    CGFloat imageH = selection.size.height / scale;
-
-    imageX = MAX(0, imageX);
-    imageY = MAX(0, imageY);
-    imageW = MIN(imageW, imageSize.width - imageX);
-    imageH = MIN(imageH, imageSize.height - imageY);
-
-    if (imageW <= 0 || imageH <= 0) return;
-
-    NSImage *finalImage = [[NSImage alloc] initWithSize:NSMakeSize(imageW, imageH)];
+    NSImage *finalImage = [[NSImage alloc] initWithSize:imageRect.size];
     [finalImage lockFocus];
-    [self.image drawAtPoint:NSMakePoint(0, 0) 
-                  fromRect:NSMakeRect(imageX, imageY, imageW, imageH) 
-                  operation:NSCompositingOperationCopy 
+    [self.image drawAtPoint:NSMakePoint(0, 0)
+                  fromRect:imageRect
+                  operation:NSCompositingOperationCopy
                     fraction:1.0];
     [finalImage unlockFocus];
 

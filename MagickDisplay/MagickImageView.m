@@ -21,67 +21,119 @@
     return self;
 }
 
+- (void)setImage:(NSImage *)newImage {
+    [super setImage:newImage];
+    if (newImage) {
+        self.originalImageSize = newImage.size;
+    }
+}
+
+- (NSSize)effectiveImageSize {
+    if (self.image && self.image.size.width > 0 && self.image.size.height > 0) {
+        return self.image.size;
+    }
+    return self.originalImageSize;
+}
+
+- (CGFloat)scaleForViewSize:(NSSize)viewSize imageSize:(NSSize)imageSize {
+    if (imageSize.width <= 0 || imageSize.height <= 0) return 0.0;
+    if (viewSize.width <= 0 || viewSize.height <= 0) return 0.0;
+    return MIN(viewSize.width / imageSize.width, viewSize.height / imageSize.height);
+}
+
+- (CGFloat)currentScale {
+    return [self scaleForViewSize:self.bounds.size imageSize:[self effectiveImageSize]];
+}
+
+- (NSRect)imageDrawingFrameForViewSize:(NSSize)viewSize imageSize:(NSSize)imageSize {
+    CGFloat scale = [self scaleForViewSize:viewSize imageSize:imageSize];
+    if (scale <= 0.0) return NSZeroRect;
+
+    CGFloat drawW = imageSize.width * scale;
+    CGFloat drawH = imageSize.height * scale;
+    CGFloat offsetX = (viewSize.width - drawW) / 2.0;
+    CGFloat offsetY = (viewSize.height - drawH) / 2.0;
+
+    return NSMakeRect(offsetX, offsetY, drawW, drawH);
+}
+
+- (NSRect)imageDrawingFrame {
+    return [self imageDrawingFrameForViewSize:self.bounds.size imageSize:[self effectiveImageSize]];
+}
+
+- (BOOL)hasSelection {
+    return !NSIsEmptyRect(self.selectionRect);
+}
+
+- (IBAction)selectAll:(id)sender {
+    NSRect drawFrame = [self imageDrawingFrame];
+    if (NSIsEmptyRect(drawFrame)) return;
+    self.selectionRect = drawFrame;
+    self.needsDisplay = YES;
+}
+
+- (NSRect)selectedImageRect {
+    if (!self.hasSelection) return NSZeroRect;
+
+    NSSize imageSize = [self effectiveImageSize];
+    CGFloat scale = [self currentScale];
+    if (scale <= 0.0 || imageSize.width <= 0 || imageSize.height <= 0) return NSZeroRect;
+
+    NSRect drawFrame = [self imageDrawingFrame];
+    if (NSIsEmptyRect(drawFrame)) return NSZeroRect;
+
+    CGFloat imageX = (self.selectionRect.origin.x - drawFrame.origin.x) / scale;
+    CGFloat imageY = (self.selectionRect.origin.y - drawFrame.origin.y) / scale;
+    CGFloat imageW = self.selectionRect.size.width / scale;
+    CGFloat imageH = self.selectionRect.size.height / scale;
+
+    imageX = MAX(0, imageX);
+    imageY = MAX(0, imageY);
+    imageW = MIN(imageW, imageSize.width - imageX);
+    imageH = MIN(imageH, imageSize.height - imageY);
+
+    if (imageW <= 0 || imageH <= 0) return NSZeroRect;
+
+    return NSMakeRect(imageX, imageY, imageW, imageH);
+}
+
 - (void)setFrame:(NSRect)frame {
     NSRect oldFrame = self.frame;
     [super setFrame:frame];
 
     // Follow the selection area when resizing
-    if (!NSIsEmptyRect(self.selectionRect)) {
+    if (self.hasSelection) {
         [self updateSelectionForResizeFromOldFrame:oldFrame];
     }
 }
 
 - (void)updateSelectionForResizeFromOldFrame:(NSRect)oldFrame {
-    if (self.originalImageSize.width <= 0 || self.originalImageSize.height <= 0) return;
+    NSSize imageSize = [self effectiveImageSize];
+    CGFloat oldScale = [self scaleForViewSize:oldFrame.size imageSize:imageSize];
+    if (oldScale <= 0.0) return;
 
-    // Calculate image drawing area in the old view
-    NSSize oldViewSize = oldFrame.size;
-    if (oldViewSize.width <= 0 || oldViewSize.height <= 0) return;
-    CGFloat oldScale = MIN(oldViewSize.width / self.originalImageSize.width, oldViewSize.height / self.originalImageSize.height);
-    if (oldScale <= 0) return;
-    CGFloat oldDrawW = self.originalImageSize.width * oldScale;
-    CGFloat oldDrawH = self.originalImageSize.height * oldScale;
-    CGFloat oldOffsetX = (oldViewSize.width - oldDrawW) / 2.0;
-    CGFloat oldOffsetY = (oldViewSize.height - oldDrawH) / 2.0;
-
-    // Calculate image drawing area in the new view
-    NSSize newViewSize = self.bounds.size;
-    if (newViewSize.width <= 0 || newViewSize.height <= 0) return;
-    CGFloat newScale = MIN(newViewSize.width / self.originalImageSize.width, newViewSize.height / self.originalImageSize.height);
-    CGFloat newDrawW = self.originalImageSize.width * newScale;
-    CGFloat newDrawH = self.originalImageSize.height * newScale;
-    CGFloat newOffsetX = (newViewSize.width - newDrawW) / 2.0;
-    CGFloat newOffsetY = (newViewSize.height - newDrawH) / 2.0;
+    NSRect oldDrawFrame = [self imageDrawingFrameForViewSize:oldFrame.size imageSize:imageSize];
+    NSRect newDrawFrame = [self imageDrawingFrame];
+    CGFloat newScale = [self currentScale];
+    if (newScale <= 0.0) return;
 
     // Convert selection area to image-relative coordinates and recalculate for the new scale
-    CGFloat relX = (self.selectionRect.origin.x - oldOffsetX) / oldScale;
-    CGFloat relY = (self.selectionRect.origin.y - oldOffsetY) / oldScale;
+    CGFloat relX = (self.selectionRect.origin.x - oldDrawFrame.origin.x) / oldScale;
+    CGFloat relY = (self.selectionRect.origin.y - oldDrawFrame.origin.y) / oldScale;
     CGFloat relW = self.selectionRect.size.width / oldScale;
     CGFloat relH = self.selectionRect.size.height / oldScale;
 
     self.selectionRect = NSMakeRect(
-        newOffsetX + relX * newScale,
-        newOffsetY + relY * newScale,
+        newDrawFrame.origin.x + relX * newScale,
+        newDrawFrame.origin.y + relY * newScale,
         relW * newScale,
         relH * newScale
     );
 }
 
 - (void)updateSelectionForCurrentBounds {
-    if (NSIsEmptyRect(self.selectionRect) || self.originalImageSize.width <= 0 || self.originalImageSize.height <= 0) {
-        return;
-    }
-
-    NSSize viewSize = self.bounds.size;
-    if (viewSize.width <= 0 || viewSize.height <= 0) return;
-    CGFloat scale = MIN(viewSize.width / self.originalImageSize.width, viewSize.height / self.originalImageSize.height);
-
-    CGFloat drawW = self.originalImageSize.width * scale;
-    CGFloat drawH = self.originalImageSize.height * scale;
-    CGFloat offsetX = (viewSize.width - drawW) / 2.0;
-    CGFloat offsetY = (viewSize.height - drawH) / 2.0;
-
-    self.selectionRect = NSMakeRect(offsetX, offsetY, drawW, drawH);
+    if (!self.hasSelection) return;
+    self.selectionRect = [self imageDrawingFrame];
 }
 
 - (void)mouseDown:(NSEvent *)event {
@@ -117,7 +169,7 @@
 
 - (void)drawRect:(NSRect)dirtyRect {
     [super drawRect:dirtyRect];
-    if (NSIsEmptyRect(self.selectionRect)) {
+    if (!self.hasSelection) {
         return;
     }
 

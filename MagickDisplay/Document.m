@@ -329,13 +329,15 @@
     NSRect imageRect = [self.imageView selectedImageRect];
     if (NSIsEmptyRect(imageRect)) return;
 
-    NSImage *finalImage = [[NSImage alloc] initWithSize:imageRect.size];
-    [finalImage lockFocus];
-    [self.image drawAtPoint:NSMakePoint(0, 0)
-                  fromRect:imageRect
-                  operation:NSCompositingOperationCopy
-                    fraction:1.0];
-    [finalImage unlockFocus];
+    NSImage *finalImage = [NSImage imageWithSize:imageRect.size
+                                         flipped:NO
+                                   drawingHandler:^BOOL(NSRect dstRect) {
+        [self.image drawAtPoint:NSMakePoint(0, 0)
+                      fromRect:imageRect
+                      operation:NSCompositingOperationCopy
+                       fraction:1.0];
+        return YES;
+    }];
 
     NSPasteboard *pasteboard = [NSPasteboard generalPasteboard];
     [pasteboard clearContents];

@@ -1,5 +1,6 @@
 #import "PreviewProvider.h"
 #import "MagickWrapper.h"
+#import "MagickImageHelper.h"
 
 @implementation PreviewProvider
 
@@ -54,48 +55,19 @@
     NSLog(@"providePreviewForFileRequest %@ | %@", request.fileURL, request.fileURL.lastPathComponent);
 #endif
 
-    // open file and read contents
-    NSError *dataError = nil;
-    NSData *fileData = [NSData dataWithContentsOfURL:request.fileURL options:NSDataReadingMappedIfSafe error:&dataError];
-    if (!fileData) {
-        NSLog(@"Failed to read file into NSData: %@", dataError);
-        handler(nil, dataError);
-        return;
-    }
-
-    // put contents into ImageMagick and convert to RGBA raw pixels
-    size_t w = 0, h = 0;
-    unsigned char *pixels = magick_read_image_rgba(request.fileURL.lastPathComponent.UTF8String, fileData.bytes, fileData.length, 600, &w, &h);
-    if (pixels == NULL) {
-        NSLog(@"ImageMagick failed to read image RGBA pixels");
-        NSError *error = [NSError errorWithDomain:@"MagickQuickLook" code:2 userInfo:@{NSLocalizedDescriptionKey:@"ImageMagick failed to extract RGBA pixels."}];
-        handler(nil, error);
-        return;
-    }
-
-    // create NSBitmapImageRep from RGBA raw pixels
-    NSBitmapImageRep *rep = [[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL
-                                                                  pixelsWide:w
-                                                                  pixelsHigh:h
-                                                               bitsPerSample:8
-                                                             samplesPerPixel:4
-                                                                    hasAlpha:YES
-                                                                    isPlanar:NO
-                                                              colorSpaceName:NSCalibratedRGBColorSpace
-                                                                 bytesPerRow:w * 4
-                                                                bitsPerPixel:32];
+    NSError *loadError = nil;
+    NSBitmapImageRep *rep = [MagickImageHelper bitmapImageRepWithContentsOfURL:request.fileURL
+                                                                  maxDimension:600
+                                                                         error:&loadError];
     if (!rep) {
-        NSLog(@"Failed to create NSBitmapImageRep from RGBA pixels");
-        free(pixels);
-        NSError *error = [NSError errorWithDomain:@"MagickQuickLook" code:3 userInfo:@{NSLocalizedDescriptionKey:@"Failed to create NSBitmapImageRep."}];
-        handler(nil, error);
+        handler(nil, loadError);
         return;
     }
 
-    memcpy(rep.bitmapData, pixels, w * h * 4);
-    free(pixels);
+    size_t w = rep.pixelsWide;
+    size_t h = rep.pixelsHigh;
 
-    //by drawing directly into a bitmap context
+    // by drawing directly into a bitmap context
     QLPreviewReply* reply = [[QLPreviewReply alloc] initWithContextSize:CGSizeMake(w, h) isBitmap:YES drawingBlock:^BOOL(CGContextRef _Nonnull context, QLPreviewReply * _Nonnull replyToUpdate, NSError *__autoreleasing  _Nullable * _Nullable error) {
         CGContextDrawImage(context, CGRectMake(0, 0, w, h), rep.CGImage);
         return YES;

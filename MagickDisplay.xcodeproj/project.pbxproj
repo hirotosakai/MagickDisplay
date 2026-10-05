@@ -79,6 +79,7 @@
 		680F97613031E52E00F4C3C9 /* Exceptions for "MagickDisplay" folder in "MagickQuickLook" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
+				MagickImageHelper.m,
 				MagickWrapper.c,
 			);
 			target = 680F97493031D68700F4C3C9 /* MagickQuickLook */;

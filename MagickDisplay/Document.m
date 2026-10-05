@@ -1,6 +1,6 @@
 #import "Document.h"
 #import "MagickImageView.h"
-#import "MagickWrapper.h"
+#import "MagickImageHelper.h"
 #import "AppDelegate.h"
 
 @implementation Document
@@ -79,70 +79,29 @@
 }
 
 - (BOOL)readFromURL:(NSURL *)url ofType:(NSString *)typeName error:(NSError **)outError {
-    NSError *dataError = nil;
-    
-    // open file and read contents
-    NSData *fileData = [NSData dataWithContentsOfURL:url options:NSDataReadingMappedIfSafe error:&dataError];
-    if (!fileData) {
-        NSLog(@"Failed to read file into NSData: %@", dataError);
-        if (outError) {
-            *outError = dataError;
-        }
-        return NO;
-    }
-    
     // Get main display maximum dimension for optimization
     NSScreen *mainScreen = [NSScreen mainScreen];
     CGFloat maxScreenDim = 0;
     if (mainScreen) {
         maxScreenDim = MAX(mainScreen.frame.size.width, mainScreen.frame.size.height);
     }
-    
-    // put contents into ImageMagick and convert to RGBA raw pixels
-    size_t w, h;
-    unsigned char *pixels = magick_read_image_rgba(url.lastPathComponent.UTF8String, fileData.bytes, fileData.length, (size_t)maxScreenDim, &w, &h);
-    if (pixels == NULL) {
-        NSLog(@"ImageMagick failed to read image RGBA pixels");
-        if (outError) {
-            *outError = [NSError errorWithDomain:@"MagickDisplay" code:2 userInfo:@{NSLocalizedDescriptionKey:@"ImageMagick could not extract RGBA pixels from the image."}];
-        }
-        return NO;
-    }
-    
-#ifdef DEBUG
-    NSLog(@"readFromURL successfully read image RGBA. Size: %zu x %zu", w, h);
-#endif
-    
-    self.originalWidth = (CGFloat)w;
-    self.originalHeight = (CGFloat)h;
-    
-    // create NSBitmapImageRep from RGBA raw pixels
-    NSBitmapImageRep *rep = [[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL
-                                                                    pixelsWide:w
-                                                                    pixelsHigh:h
-                                                                 bitsPerSample:8
-                                                               samplesPerPixel:4
-                                                                      hasAlpha:YES
-                                                                      isPlanar:NO
-                                                                colorSpaceName:NSCalibratedRGBColorSpace
-                                                                   bytesPerRow:w * 4
-                                                                  bitsPerPixel:32];
+
+    NSBitmapImageRep *rep = [MagickImageHelper bitmapImageRepWithContentsOfURL:url
+                                                                  maxDimension:(NSUInteger)maxScreenDim
+                                                                         error:outError];
     if (!rep) {
-        NSLog(@"Failed to create NSBitmapImageRep from RGBA pixels");
-        free(pixels);
         return NO;
     }
-    
-    memcpy([rep bitmapData], pixels, w * h * 4);
-    free(pixels);
-    
+
+    self.originalWidth = (CGFloat)rep.pixelsWide;
+    self.originalHeight = (CGFloat)rep.pixelsHigh;
+
     // create NSImage from NSBitmapImageRep
-    NSImage *image = [[NSImage alloc] initWithSize:NSMakeSize(w, h)];
+    NSImage *image = [[NSImage alloc] initWithSize:NSMakeSize(rep.pixelsWide, rep.pixelsHigh)];
     [image addRepresentation:rep];
     self.image = image;
-    
+
     if (!self.image) {
-        NSLog(@"Failed to create NSImage from RGBA pixels");
         if (outError) {
             *outError = [NSError errorWithDomain:@"MagickDisplay" code:3 userInfo:@{NSLocalizedDescriptionKey:@"Failed to create NSImage from RGBA pixels."}];
         }

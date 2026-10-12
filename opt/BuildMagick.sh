@@ -2,7 +2,7 @@
 # BuildMagick.sh - build ImageMagick
 
 BUILD_MAGICK=1
-VER_MAGICK=7.1.2-32
+VER_MAGICK=7.1.2-33
 
 ################################################################################
 PATH=/usr/bin:/bin

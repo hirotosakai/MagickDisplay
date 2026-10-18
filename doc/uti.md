@@ -1,4 +1,4 @@
-# uti.md - Based on ImageMagick 7.1.2-33
+# uti.md - Based on ImageMagick 7.1.2-34
 
 | UTI                               | Format     | Description                                          |
 | --------------------------------- | ---------- | ---------------------------------------------------- |

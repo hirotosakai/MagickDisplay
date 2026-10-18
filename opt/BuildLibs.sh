@@ -30,9 +30,6 @@ BUILD_FPX=1
 BUILD_LIBULTRAHDR=1
 BUILD_FLIF=1
 
-BUILD_FREETYPE=0
-BUILD_LIBWMF=0
-
 VER_ZSTD=1.5.7
 VER_LCMS2=2.19.1
 
@@ -48,11 +45,11 @@ VER_OPENJP2=2.5.4
 
 VER_IMATH=3.2.3
 VER_OPENJPH=0.32.0
-VER_OPENEXR=3.5.1
+VER_OPENEXR=3.5.2
 
 VER_LIBDE265=1.1.3
-VER_AOM=3.15.1
-VER_LIBHEIF=1.23.5
+VER_AOM=3.15.2
+VER_LIBHEIF=1.23.6
 
 VER_BROTLI=1.2.0
 VER_HIGHWAY=1.4.0
@@ -61,9 +58,6 @@ VER_LIBJXL=0.12.0
 VER_LIBFPX=main
 VER_LIBULTRAHDR=2.0.2
 VER_FLIF=0.4
-
-VER_FREETYPE=2.14.3
-VER_LIBWMF=0.2.16
 
 ################################################################################
 PATH=/usr/bin:/bin
@@ -534,36 +528,6 @@ install -m 644 library/*.h ../../include
 cd ..
 cp README.md ../doc/FLIF-README.md
 cp LICENSE ../doc/FLIF-LICENSE
-cd ..
-
-fi
-
-## freetype
-if [ $BUILD_FREETYPE -eq 1 ] ; then
-
-if [ ! -e freetype-${VER_FREETYPE}.tar.xz ]; then
-  curl -L -O https://sourceforge.net/projects/freetype/files/freetype2/${VER_FREETYPE}/freetype-${VER_FREETYPE}.tar.xz
-fi
-
-tar xfz freetype-${VER_FREETYPE}.tar.xz
-cd freetype-${VER_FREETYPE}
-./configure --prefix="${workDir}" --disable-dependency-tracking --enable-shared=no --enable-freetype-config --with-bzip2=no --with-png=no --with-harfbuzz=no --with-brotli=no --with-librsvg=no
-make clean && make && make install || exit 1
-cd ..
-
-fi
-
-## libwmf
-if [ $BUILD_LIBWMF -eq 1 ] ; then
-
-if [ ! -e libwmf-${VER_LIBWMF}.tar.gz ]; then
-  curl -L -O https://github.com/caolanm/libwmf/releases/download/v${VER_LIBWMF}/libwmf-${VER_LIBWMF}.tar.gz
-fi
-
-tar xfz libwmf-${VER_LIBWMF}.tar.gz
-cd libwmf-${VER_LIBWMF}
-./configure --prefix="${workDir}" --disable-dependency-tracking --enable-shared=no --enable-gd --disable-pixbuf --without-x
-make clean && make && make install || exit 1
 cd ..
 
 fi
